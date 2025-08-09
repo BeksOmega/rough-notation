@@ -15,7 +15,6 @@ type AnnotationState = "unattached" | "not-showing" | "showing";
 class RoughAnnotationImpl implements RoughAnnotation {
   private _state: AnnotationState = "unattached";
   private _config: RoughAnnotationConfig;
-  private _resizing = false;
   private _ro?: any; // ResizeObserver is not supported in typescript std lib yet
   private _seed = randomSeed();
 
@@ -90,16 +89,8 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   private _resizeListener = () => {
-    if (!this._resizing) {
-      this._resizing = true;
-      setTimeout(() => {
-        this._resizing = false;
-        if (this._state === "showing") {
-          if (this.haveRectsChanged()) {
-            this.show();
-          }
-        }
-      }, 400);
+    if (this._state === "showing" && this.haveRectsChanged()) {
+      this.show();
     }
   };
 
@@ -203,7 +194,7 @@ class RoughAnnotationImpl implements RoughAnnotation {
       case "unattached":
         break;
       case "showing":
-        this.hide();
+        this.hide(/* force */ true);
         if (this._svg) {
           this.render(this._svg, true);
         }
@@ -217,12 +208,15 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
   }
 
-  hide(): void {
+  /**
+   * @param force - If true, the annotation will be hidden immediately without animation.
+   */
+  hide(force?: boolean): void {
     if (!this.isShowing()) {
       return;
     }
     const animate = this.animateOnHide ?? false;
-    if (this._svg && animate) {
+    if (this._svg && !force && animate) {
       const paths = Array.from(this._svg.querySelectorAll("path"));
       if (paths.length > 0) {
         const animationDuration =
