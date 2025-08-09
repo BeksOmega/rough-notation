@@ -1,58 +1,59 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Rough Notation Demo</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    #annotated-text {
-      font-size: 2em;
-      padding: 20px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-    .instructions {
-      margin-top: 20px;
-      font-size: 1em;
-      color: #555;
-    }
-  </style>
-</head>
-<body>
-
-  <div id="annotated-text">
-    Click me to toggle the annotation.
-  </div>
-
-  <div class="instructions">
-    This demo shows the animated `hide()` method.
-  </div>
-
-  <script src="lib/rough-notation.iife.js"></script>
-  <script>
-    const { annotate } = RoughNotation;
-
-    const el = document.getElementById('annotated-text');
-    const annotation = annotate(el, { type: 'underline', color: 'red', animationDuration: 1000 });
-
-    el.addEventListener('click', () => {
-      if (annotation.isShowing()) {
-        annotation.hide();
-      } else {
-        annotation.show();
+  <head>
+    <title>Rough Notation Demo</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
       }
-    });
+      #annotated-text {
+        font-size: 2em;
+        padding: 20px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+      .instructions {
+        margin-top: 20px;
+        font-size: 1em;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="annotated-text">Click me to toggle the annotation.</div>
 
-    // Initially show the annotation
-    annotation.show();
-  </script>
+    <div class="instructions">
+      This demo shows the animated `hide()` method.
+    </div>
 
-</body>
+    <script src="lib/rough-notation.iife.js"></script>
+    <script>
+      const { annotate } = RoughNotation;
+
+      const el = document.getElementById("annotated-text");
+      const annotation = annotate(el, {
+        type: "underline",
+        color: "red",
+        animationDuration: 1000,
+        animateOnHide: true,
+      });
+
+      el.addEventListener("click", () => {
+        if (annotation.isShowing()) {
+          annotation.hide();
+        } else {
+          annotation.show();
+        }
+      });
+
+      // Initially show the annotation
+      annotation.show();
+    </script>
+  </body>
 </html>
