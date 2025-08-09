@@ -12,8 +12,47 @@ import { randomSeed } from "roughjs/bin/math";
 
 type AnnotationState = "unattached" | "not-showing" | "showing";
 
+// Global batching system for resize handling
+const dirtyAnnotations = new Set<RoughAnnotationImpl>();
+let pendingUpdate = false;
+
+function scheduleUpdate() {
+  if (!pendingUpdate) {
+    pendingUpdate = true;
+    requestAnimationFrame(() => {
+      // First pass: measure all dirty annotations in batch
+      const annotationsToUpdate: {
+        annotation: RoughAnnotationImpl;
+        newRects: Rect[];
+      }[] = [];
+
+      for (const annotation of dirtyAnnotations) {
+        if (annotation._state === "showing") {
+          const newRects = annotation.measureRects();
+          if (annotation.haveRectsChanged(newRects)) {
+            annotationsToUpdate.push({ annotation, newRects });
+          }
+        }
+      }
+
+      // Second pass: update DOM for annotations that actually changed
+      for (const { annotation, newRects } of annotationsToUpdate) {
+        annotation.updateWithNewRects(newRects);
+      }
+
+      dirtyAnnotations.clear();
+      pendingUpdate = false;
+    });
+  }
+}
+
+function markAnnotationDirty(annotation: RoughAnnotationImpl) {
+  dirtyAnnotations.add(annotation);
+  scheduleUpdate();
+}
+
 class RoughAnnotationImpl implements RoughAnnotation {
-  private _state: AnnotationState = "unattached";
+  _state: AnnotationState = "unattached"; // Made public for batching system
   private _config: RoughAnnotationConfig;
   private _ro?: any; // ResizeObserver is not supported in typescript std lib yet
   private _seed = randomSeed();
@@ -89,9 +128,7 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   private _resizeListener = () => {
-    if (this._state === "showing" && this.haveRectsChanged()) {
-      this.show();
-    }
+    markAnnotationDirty(this);
   };
 
   private attach() {
@@ -141,18 +178,31 @@ class RoughAnnotationImpl implements RoughAnnotation {
           }
         }
       });
-    }
-    if (this._ro) {
       this._ro.observe(this._e);
     }
   }
 
-  private haveRectsChanged(): boolean {
+  measureRects(): Rect[] {
+    const ret: Rect[] = [];
+    if (this._svg) {
+      if (this._config.multiline) {
+        const elementRects = this._e.getClientRects();
+        for (let i = 0; i < elementRects.length; i++) {
+          ret.push(this.svgRect(this._svg, elementRects[i]));
+        }
+      } else {
+        ret.push(this.svgRect(this._svg, this._e.getBoundingClientRect()));
+      }
+    }
+    return ret;
+  }
+
+  haveRectsChanged(newRects?: Rect[]): boolean {
+    const rectsToCompare = newRects || this.measureRects();
     if (this._lastSizes.length) {
-      const newRects = this.rects();
-      if (newRects.length === this._lastSizes.length) {
-        for (let i = 0; i < newRects.length; i++) {
-          if (!this.isSameRect(newRects[i], this._lastSizes[i])) {
+      if (rectsToCompare.length === this._lastSizes.length) {
+        for (let i = 0; i < rectsToCompare.length; i++) {
+          if (!this.isSameRect(rectsToCompare[i], this._lastSizes[i])) {
             return true;
           }
         }
@@ -161,6 +211,123 @@ class RoughAnnotationImpl implements RoughAnnotation {
       }
     }
     return false;
+  }
+
+  private hasOnlyPositionChanged(newRects: Rect[]): boolean {
+    if (this._lastSizes.length !== newRects.length) {
+      return false;
+    }
+
+    const si = (a: number, b: number) => Math.round(a) === Math.round(b);
+    let hasPositionChange = false;
+
+    for (let i = 0; i < newRects.length; i++) {
+      const oldRect = this._lastSizes[i];
+      const newRect = newRects[i];
+
+      // Check if size changed - if so, we can't use translation
+      if (!si(oldRect.w, newRect.w) || !si(oldRect.h, newRect.h)) {
+        return false;
+      }
+
+      // Check if position changed
+      if (!si(oldRect.x, newRect.x) || !si(oldRect.y, newRect.y)) {
+        hasPositionChange = true;
+      }
+    }
+
+    // Only return true if position changed but size didn't
+    return hasPositionChange;
+  }
+
+  private translateSVGContent(newRects: Rect[]): void {
+    if (!this._svg || this._lastSizes.length === 0) return;
+
+    if (newRects.length === 1 && this._lastSizes.length === 1) {
+      // Single rect case (most common)
+      const oldRect = this._lastSizes[0];
+      const newRect = newRects[0];
+
+      const deltaX = newRect.x - oldRect.x;
+      const deltaY = newRect.y - oldRect.y;
+
+      this.applyTranslationToAllPaths(deltaX, deltaY);
+    } else if (newRects.length === this._lastSizes.length) {
+      // Multi-rect case: calculate average translation
+      // This works well for multiline text where all lines move together
+      let totalDeltaX = 0;
+      let totalDeltaY = 0;
+
+      for (let i = 0; i < newRects.length; i++) {
+        totalDeltaX += newRects[i].x - this._lastSizes[i].x;
+        totalDeltaY += newRects[i].y - this._lastSizes[i].y;
+      }
+
+      const avgDeltaX = totalDeltaX / newRects.length;
+      const avgDeltaY = totalDeltaY / newRects.length;
+
+      // Only apply if all deltas are reasonably consistent (same direction/magnitude)
+      const isConsistent = newRects.every((rect, i) => {
+        const deltaX = rect.x - this._lastSizes[i].x;
+        const deltaY = rect.y - this._lastSizes[i].y;
+        return (
+          Math.abs(deltaX - avgDeltaX) < 2 && Math.abs(deltaY - avgDeltaY) < 2
+        );
+      });
+
+      if (isConsistent) {
+        this.applyTranslationToAllPaths(avgDeltaX, avgDeltaY);
+      } else {
+        // Fall back to full re-render for complex multi-rect changes
+        this.renderWithRects(this._svg, newRects, true);
+        return;
+      }
+    }
+
+    this._lastSizes = newRects;
+  }
+
+  private applyTranslationToAllPaths(deltaX: number, deltaY: number): void {
+    if (!this._svg) return;
+
+    const paths = this._svg.querySelectorAll("path");
+    paths.forEach((path) => {
+      const currentTransform = path.getAttribute("transform") || "";
+      let newTransform = "";
+
+      if (currentTransform.includes("translate")) {
+        // Extract existing translate values and add deltas
+        const translateMatch = currentTransform.match(/translate\(([^)]+)\)/);
+        if (translateMatch) {
+          const coords = translateMatch[1].split(/[,\s]+/).map(Number);
+          const currentX = coords[0] || 0;
+          const currentY = coords[1] || 0;
+
+          newTransform = currentTransform.replace(
+            /translate\([^)]+\)/,
+            `translate(${currentX + deltaX}, ${currentY + deltaY})`
+          );
+        }
+      } else {
+        // Add new translate
+        newTransform =
+          `translate(${deltaX}, ${deltaY}) ${currentTransform}`.trim();
+      }
+
+      path.setAttribute("transform", newTransform);
+    });
+  }
+
+  updateWithNewRects(newRects: Rect[]): void {
+    if (this._state === "showing" && this._svg) {
+      // Check if we can optimize with just a translation
+      if (this.hasOnlyPositionChanged(newRects)) {
+        this.translateSVGContent(newRects);
+      } else {
+        // Full re-render needed
+        this.renderWithRects(this._svg, newRects, true);
+      }
+    }
   }
 
   private isSameRect(rect1: Rect, rect2: Rect): boolean {
@@ -284,12 +451,25 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   private render(svg: SVGSVGElement, ensureNoAnimation: boolean) {
+    const rects = this.measureRects();
+    this.renderWithRects(svg, rects, ensureNoAnimation);
+  }
+
+  private renderWithRects(
+    svg: SVGSVGElement,
+    rects: Rect[],
+    ensureNoAnimation: boolean
+  ) {
+    // Clear existing paths first
+    while (svg.lastChild) {
+      svg.removeChild(svg.lastChild);
+    }
+
     let config = this._config;
     if (ensureNoAnimation) {
       config = JSON.parse(JSON.stringify(this._config));
       config.animate = false;
     }
-    const rects = this.rects();
     let totalWidth = 0;
     rects.forEach((rect) => (totalWidth += rect.w));
     const totalDuration =
@@ -310,21 +490,6 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
     this._lastSizes = rects;
     this._state = "showing";
-  }
-
-  private rects(): Rect[] {
-    const ret: Rect[] = [];
-    if (this._svg) {
-      if (this._config.multiline) {
-        const elementRects = this._e.getClientRects();
-        for (let i = 0; i < elementRects.length; i++) {
-          ret.push(this.svgRect(this._svg, elementRects[i]));
-        }
-      } else {
-        ret.push(this.svgRect(this._svg, this._e.getBoundingClientRect()));
-      }
-    }
-    return ret;
   }
 
   private svgRect(svg: SVGSVGElement, bounds: DOMRect | DOMRectReadOnly): Rect {
