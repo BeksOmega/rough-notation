@@ -186,7 +186,54 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   hide(): void {
-    if (this._svg) {
+    if (!this.isShowing()) {
+      return;
+    }
+    if (this._svg && this.animate) {
+      const paths = Array.from(this._svg.querySelectorAll('path'));
+      if (paths.length > 0) {
+        let longestDuration = 0;
+        const animations: (string | null)[] = [];
+
+        for (const path of paths) {
+          const style = path.style;
+          const animation = style.animation;
+          animations.push(animation);
+          if (animation) {
+            const parts = animation.split(' ');
+            if (parts.length > 3) {
+              const duration = parseFloat(parts[1]);
+              const delay = parseFloat(parts[3]);
+              const total = duration + delay;
+              if (total > longestDuration) {
+                longestDuration = total;
+              }
+            }
+          }
+          style.animation = 'none';
+        }
+
+        requestAnimationFrame(() => {
+          for (let i = 0; i < paths.length; i++) {
+            const path = paths[i];
+            const style = path.style;
+            const animation = animations[i];
+            if (animation) {
+              style.animation = animation;
+              style.animationDirection = 'reverse';
+            }
+          }
+        });
+
+        setTimeout(() => {
+          paths.forEach(p => {
+            if (p.parentElement) {
+              p.parentElement.removeChild(p);
+            }
+          });
+        }, longestDuration);
+      }
+    } else if (this._svg) {
       while (this._svg.lastChild) {
         this._svg.removeChild(this._svg.lastChild);
       }
