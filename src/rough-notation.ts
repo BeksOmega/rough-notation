@@ -232,7 +232,6 @@ class RoughAnnotationImpl implements RoughAnnotation {
         const lengths: number[] = [];
         let totalLength = 0;
 
-        console.log("paths", paths);
         for (const path of paths) {
           const style = path.style;
           const animation = style.animation;
