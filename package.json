@@ -21,6 +21,9 @@
   ],
   "author": "Preet Shihn",
   "license": "MIT",
+  "files": [
+    "lib"
+  ],
   "bugs": {
     "url": "https://github.com/pshihn/rough-notation/issues"
   },
