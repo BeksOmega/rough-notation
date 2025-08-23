@@ -1,4 +1,4 @@
-export const SVG_NS = 'http://www.w3.org/2000/svg';
+export const SVG_NS = "http://www.w3.org/2000/svg";
 
 export const DEFAULT_ANIMATION_DURATION = 800;
 
@@ -9,10 +9,17 @@ export interface Rect {
   h: number;
 }
 
-export type RoughAnnotationType = 'underline' | 'box' | 'circle' | 'highlight' | 'strike-through' | 'crossed-off' | 'bracket';
+export type RoughAnnotationType =
+  | "underline"
+  | "box"
+  | "circle"
+  | "highlight"
+  | "strike-through"
+  | "crossed-off"
+  | "bracket";
 export type FullPadding = [number, number, number, number];
 export type RoughPadding = number | [number, number] | FullPadding;
-export type BracketType = 'left' | 'right' | 'top' | 'bottom';
+export type BracketType = "left" | "right" | "top" | "bottom";
 
 export interface RoughAnnotationConfig extends RoughAnnotationConfigBase {
   type: RoughAnnotationType;
@@ -23,6 +30,7 @@ export interface RoughAnnotationConfig extends RoughAnnotationConfigBase {
 export interface RoughAnnotationConfigBase {
   animate?: boolean; // defaults to true
   animationDuration?: number; // defaulst to 1000ms
+  animateOnHide?: boolean; // defaults to false
   color?: string; // defaults to currentColor
   strokeWidth?: number; // default based on type
   padding?: RoughPadding; // defaults to 5px

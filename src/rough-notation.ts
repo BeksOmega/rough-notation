@@ -1,12 +1,19 @@
-import { Rect, RoughAnnotationConfig, RoughAnnotation, SVG_NS, RoughAnnotationGroup, DEFAULT_ANIMATION_DURATION } from './model.js';
-import { renderAnnotation } from './render.js';
-import { ensureKeyframes } from './keyframes.js';
-import { randomSeed } from 'roughjs/bin/math';
+import {
+  Rect,
+  RoughAnnotationConfig,
+  RoughAnnotation,
+  SVG_NS,
+  RoughAnnotationGroup,
+  DEFAULT_ANIMATION_DURATION,
+} from "./model.js";
+import { renderAnnotation } from "./render.js";
+import { ensureKeyframes } from "./keyframes.js";
+import { randomSeed } from "roughjs/bin/math";
 
-type AnnotationState = 'unattached' | 'not-showing' | 'showing';
+type AnnotationState = "unattached" | "not-showing" | "showing";
 
 class RoughAnnotationImpl implements RoughAnnotation {
-  private _state: AnnotationState = 'unattached';
+  private _state: AnnotationState = "unattached";
   private _config: RoughAnnotationConfig;
   private _resizing = false;
   private _ro?: any; // ResizeObserver is not supported in typescript std lib yet
@@ -24,16 +31,37 @@ class RoughAnnotationImpl implements RoughAnnotation {
     this.attach();
   }
 
-  get animate() { return this._config.animate; }
-  set animate(value) { this._config.animate = value; }
+  get animate() {
+    return this._config.animate;
+  }
+  set animate(value) {
+    this._config.animate = value;
+  }
 
-  get animationDuration() { return this._config.animationDuration; }
-  set animationDuration(value) { this._config.animationDuration = value; }
+  get animationDuration() {
+    return this._config.animationDuration;
+  }
+  set animationDuration(value) {
+    this._config.animationDuration = value;
+  }
 
-  get iterations() { return this._config.iterations; }
-  set iterations(value) { this._config.iterations = value; }
+  get animateOnHide() {
+    return this._config.animateOnHide;
+  }
+  set animateOnHide(value) {
+    this._config.animateOnHide = value;
+  }
 
-  get color() { return this._config.color; }
+  get iterations() {
+    return this._config.iterations;
+  }
+  set iterations(value) {
+    this._config.iterations = value;
+  }
+
+  get color() {
+    return this._config.color;
+  }
   set color(value) {
     if (this._config.color !== value) {
       this._config.color = value;
@@ -41,7 +69,9 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
   }
 
-  get strokeWidth() { return this._config.strokeWidth; }
+  get strokeWidth() {
+    return this._config.strokeWidth;
+  }
   set strokeWidth(value) {
     if (this._config.strokeWidth !== value) {
       this._config.strokeWidth = value;
@@ -49,7 +79,9 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
   }
 
-  get padding() { return this._config.padding; }
+  get padding() {
+    return this._config.padding;
+  }
   set padding(value) {
     if (this._config.padding !== value) {
       this._config.padding = value;
@@ -62,38 +94,38 @@ class RoughAnnotationImpl implements RoughAnnotation {
       this._resizing = true;
       setTimeout(() => {
         this._resizing = false;
-        if (this._state === 'showing') {
+        if (this._state === "showing") {
           if (this.haveRectsChanged()) {
             this.show();
           }
         }
       }, 400);
     }
-  }
+  };
 
   private attach() {
-    if (this._state === 'unattached' && this._e.parentElement) {
+    if (this._state === "unattached" && this._e.parentElement) {
       ensureKeyframes();
-      const svg = this._svg = document.createElementNS(SVG_NS, 'svg');
-      svg.setAttribute('class', 'rough-annotation');
+      const svg = (this._svg = document.createElementNS(SVG_NS, "svg"));
+      svg.setAttribute("class", "rough-annotation");
       const style = svg.style;
-      style.position = 'absolute';
-      style.top = '0';
-      style.left = '0';
-      style.overflow = 'visible';
-      style.pointerEvents = 'none';
-      style.width = '100px';
-      style.height = '100px';
-      const prepend = this._config.type === 'highlight';
-      this._e.insertAdjacentElement(prepend ? 'beforebegin' : 'afterend', svg);
-      this._state = 'not-showing';
+      style.position = "absolute";
+      style.top = "0";
+      style.left = "0";
+      style.overflow = "visible";
+      style.pointerEvents = "none";
+      style.width = "100px";
+      style.height = "100px";
+      const prepend = this._config.type === "highlight";
+      this._e.insertAdjacentElement(prepend ? "beforebegin" : "afterend", svg);
+      this._state = "not-showing";
 
       // ensure e is positioned
       if (prepend) {
         const computedPos = window.getComputedStyle(this._e).position;
-        const unpositioned = (!computedPos) || (computedPos === 'static');
+        const unpositioned = !computedPos || computedPos === "static";
         if (unpositioned) {
-          this._e.style.position = 'relative';
+          this._e.style.position = "relative";
         }
       }
       this.attachListeners();
@@ -101,7 +133,7 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   private detachListeners() {
-    window.removeEventListener('resize', this._resizeListener);
+    window.removeEventListener("resize", this._resizeListener);
     if (this._ro) {
       this._ro.unobserve(this._e);
     }
@@ -109,8 +141,8 @@ class RoughAnnotationImpl implements RoughAnnotation {
 
   private attachListeners() {
     this.detachListeners();
-    window.addEventListener('resize', this._resizeListener, { passive: true });
-    if ((!this._ro) && ('ResizeObserver' in window)) {
+    window.addEventListener("resize", this._resizeListener, { passive: true });
+    if (!this._ro && "ResizeObserver" in window) {
       this._ro = new (window as any).ResizeObserver((entries: any) => {
         for (const entry of entries) {
           if (entry.contentRect) {
@@ -151,12 +183,12 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   isShowing(): boolean {
-    return (this._state !== 'not-showing');
+    return this._state !== "not-showing";
   }
 
   private pendingRefresh?: Promise<void>;
   private refresh() {
-    if (this.isShowing() && (!this.pendingRefresh)) {
+    if (this.isShowing() && !this.pendingRefresh) {
       this.pendingRefresh = Promise.resolve().then(() => {
         if (this.isShowing()) {
           this.show();
@@ -168,15 +200,15 @@ class RoughAnnotationImpl implements RoughAnnotation {
 
   show(): void {
     switch (this._state) {
-      case 'unattached':
+      case "unattached":
         break;
-      case 'showing':
+      case "showing":
         this.hide();
         if (this._svg) {
           this.render(this._svg, true);
         }
         break;
-      case 'not-showing':
+      case "not-showing":
         this.attach();
         if (this._svg) {
           this.render(this._svg, false);
@@ -186,12 +218,66 @@ class RoughAnnotationImpl implements RoughAnnotation {
   }
 
   hide(): void {
-    if (this._svg) {
+    if (!this.isShowing()) {
+      return;
+    }
+    const animate = this.animateOnHide ?? false;
+    if (this._svg && animate) {
+      const paths = Array.from(this._svg.querySelectorAll("path"));
+      if (paths.length > 0) {
+        const animationDuration =
+          this._config.animationDuration || DEFAULT_ANIMATION_DURATION;
+        const animationGroupDelay = this._animationDelay;
+        const animations: (string | null)[] = [];
+        const lengths: number[] = [];
+        let totalLength = 0;
+
+        for (const path of paths) {
+          const style = path.style;
+          const animation = style.animation;
+          animations.push(animation);
+          style.animation = "none";
+          const length = path.getTotalLength();
+          lengths.push(length);
+          totalLength += length;
+        }
+
+        requestAnimationFrame(() => {
+          let durationOffset = 0;
+          for (let i = paths.length - 1; i >= 0; i--) {
+            const path = paths[i];
+            const animation = animations[i];
+            if (animation) {
+              const length = lengths[i];
+              const duration = totalLength
+                ? animationDuration * (length / totalLength)
+                : 0;
+              const delay = animationGroupDelay + durationOffset;
+              const style = path.style;
+              style.strokeDashoffset = "0";
+              style.strokeDasharray = `${length}`;
+              style.setProperty("--path-length", `${length}`);
+              style.animation = `rough-notation-dash-reverse ${duration}ms ease-out ${delay}ms forwards`;
+              durationOffset += duration;
+            }
+          }
+        });
+
+        const totalAnimationTime = animationDuration + animationGroupDelay;
+        setTimeout(() => {
+          paths.forEach((p) => {
+            if (p.parentElement) {
+              p.parentElement.removeChild(p);
+            }
+          });
+        }, totalAnimationTime);
+      }
+    } else if (this._svg) {
       while (this._svg.lastChild) {
         this._svg.removeChild(this._svg.lastChild);
       }
     }
-    this._state = 'not-showing';
+    this._state = "not-showing";
   }
 
   remove(): void {
@@ -199,7 +285,7 @@ class RoughAnnotationImpl implements RoughAnnotation {
       this._svg.parentElement.removeChild(this._svg);
     }
     this._svg = undefined;
-    this._state = 'unattached';
+    this._state = "unattached";
     this.detachListeners();
   }
 
@@ -211,17 +297,25 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
     const rects = this.rects();
     let totalWidth = 0;
-    rects.forEach((rect) => totalWidth += rect.w);
-    const totalDuration = (config.animationDuration || DEFAULT_ANIMATION_DURATION);
+    rects.forEach((rect) => (totalWidth += rect.w));
+    const totalDuration =
+      config.animationDuration || DEFAULT_ANIMATION_DURATION;
     let delay = 0;
     for (let i = 0; i < rects.length; i++) {
       const rect = rects[i];
       const ad = totalDuration * (rect.w / totalWidth);
-      renderAnnotation(svg, rects[i], config, delay + this._animationDelay, ad, this._seed);
+      renderAnnotation(
+        svg,
+        rects[i],
+        config,
+        delay + this._animationDelay,
+        ad,
+        this._seed
+      );
       delay += ad;
     }
     this._lastSizes = rects;
-    this._state = 'showing';
+    this._state = "showing";
   }
 
   private rects(): Rect[] {
@@ -246,21 +340,29 @@ class RoughAnnotationImpl implements RoughAnnotation {
       x: (rect2.x || rect2.left) - (rect1.x || rect1.left),
       y: (rect2.y || rect2.top) - (rect1.y || rect1.top),
       w: rect2.width,
-      h: rect2.height
+      h: rect2.height,
     };
   }
 }
 
-export function annotate(element: HTMLElement, config: RoughAnnotationConfig): RoughAnnotation {
+export function annotate(
+  element: HTMLElement,
+  config: RoughAnnotationConfig
+): RoughAnnotation {
   return new RoughAnnotationImpl(element, config);
 }
 
-export function annotationGroup(annotations: RoughAnnotation[]): RoughAnnotationGroup {
+export function annotationGroup(
+  annotations: RoughAnnotation[]
+): RoughAnnotationGroup {
   let delay = 0;
   for (const a of annotations) {
     const ai = a as RoughAnnotationImpl;
     ai._animationDelay = delay;
-    const duration = ai.animationDuration === 0 ? 0 : (ai.animationDuration || DEFAULT_ANIMATION_DURATION);
+    const duration =
+      ai.animationDuration === 0
+        ? 0
+        : ai.animationDuration || DEFAULT_ANIMATION_DURATION;
     delay += duration;
   }
   const list = [...annotations];
@@ -274,6 +376,6 @@ export function annotationGroup(annotations: RoughAnnotation[]): RoughAnnotation
       for (const a of list) {
         a.hide();
       }
-    }
+    },
   };
 }
