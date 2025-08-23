@@ -9,51 +9,209 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
         margin: 0;
       }
-      #annotated-text {
+      .annotated-text {
         font-size: 2em;
-        padding: 20px;
+        padding: 4px;
         border: 1px solid #ccc;
         cursor: pointer;
+        margin: 8px;
+        transition: font-size 0.1s;
       }
       .instructions {
         margin-top: 20px;
         font-size: 1em;
         color: #555;
       }
+      .controls {
+        margin: 20px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        font-size: 1em;
+        cursor: pointer;
+      }
+      .resize-text {
+        font-size: 1.5em;
+      }
+      #log {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 300px;
+        height: 200px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-y: auto;
+      }
     </style>
   </head>
   <body>
-    <div id="annotated-text">Click me to toggle the annotation.</div>
+    <div class="controls">
+      <button onclick="toggleAnnotations()">Toggle All Annotations</button>
+      <button onclick="resizeElements()">Resize Elements</button>
+    </div>
 
     <div class="instructions">
-      This demo shows the animated `hide()` method.
+      This demo shows both batched resize handling and SVG translation
+      optimization.<br />
+      - <strong>Resize Elements</strong>: Size changes → Full re-render (paths
+      recreated)<br />
     </div>
+
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
+    <div class="annotated-text">Click me to toggle the annotation.</div>
 
     <script src="lib/rough-notation.iife.js"></script>
     <script>
       const { annotate } = RoughNotation;
 
-      const el = document.getElementById("annotated-text");
-      const annotation = annotate(el, {
-        type: "underline",
-        color: "red",
-        animationDuration: 1000,
-        animateOnHide: true,
-      });
+      const els = document.getElementsByClassName("annotated-text");
+      const annotations = Array.from(els).map((el) =>
+        annotate(el, {
+          type: "underline",
+          color: "red",
+          animationDuration: 1000,
+          animateOnHide: true,
+        })
+      );
 
-      el.addEventListener("click", () => {
-        if (annotation.isShowing()) {
-          annotation.hide();
-        } else {
-          annotation.show();
-        }
-      });
+      for (let i = 0; i < annotations.length; i++) {
+        const annotation = annotations[i];
+        const el = els[i];
+        el.addEventListener("click", () => {
+          if (annotation.isShowing()) {
+            annotation.hide();
+          } else {
+            annotation.show();
+          }
+        });
+      }
 
-      // Initially show the annotation
-      annotation.show();
+      function toggleAnnotations() {
+        annotations.forEach((annotation) => {
+          if (annotation.isShowing()) {
+            annotation.hide();
+          } else {
+            annotation.show();
+          }
+        });
+      }
+
+      function resizeElements() {
+        Array.from(els).forEach((el, i) => {
+          const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
+          const newSize = currentSize === 32 ? 24 : 32;
+          el.style.fontSize = newSize + "px";
+        });
+      }
+
+      // Initially show annotations
+      annotations.forEach((annotation) => annotation.show());
     </script>
   </body>
 </html>
