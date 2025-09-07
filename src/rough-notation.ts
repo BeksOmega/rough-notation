@@ -127,6 +127,13 @@ class RoughAnnotationImpl implements RoughAnnotation {
     }
   }
 
+  /**
+   * Mark the annotation as dirty, so it will be updated on the next animation frame.
+   */
+  markDirty() {
+    markAnnotationDirty(this);
+  }
+
   private _resizeListener = () => {
     markAnnotationDirty(this);
   };
